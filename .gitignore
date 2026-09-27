@@ -1,0 +1,24 @@
+# bagimlilik ve derleme ciktilari
+node_modules/
+dist/
+build/
+
+# editor ve isletim sistemi
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# yerel ve gizli dosyalar  (bunlar asla depoya girmemeli)
+.env
+.env.*
+*.local
+*.key
+*.pem
+secrets.json
+
+# kayit / video calisma dosyalari
+*.mkv
+*.mp4
+kayitlar/
