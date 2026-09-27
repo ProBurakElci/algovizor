@@ -1,16 +1,16 @@
 /*
- * Yol bulma algoritmalari.
+ * Pathfinding algorithms.
  *
- * Izgara duz bir dizi olarak tutuluyor: index = row * cols + col.
- * Her hucre icin tip: 0 = bos, 1 = duvar, 2 = agir zemin.
+ * The grid is a flat array: index = row * cols + col.
+ * Cell types: 0 = open, 1 = wall, 2 = heavy ground.
  *
- * Her algoritma ayni seyi dondurur:
+ * Every algorithm returns the same shape:
  *   { visited: [index...], path: [index...], cost: number|null }
- * visited -> hucrelerin kesfedilme sirasi (animasyon bunu oynatir)
- * path    -> baslangictan hedefe bulunan rota (bos ise yol yok)
+ * visited -> the order cells were explored (the animation replays this)
+ * path    -> the route from start to target (empty when there is none)
  *
- * Algoritmalar DOM'a dokunmaz; bu yuzden ayni kod Node uzerinde test
- * edilebiliyor.
+ * None of this touches the DOM, which is why the same code runs under Node
+ * in the test suite.
  */
 (function (global) {
   "use strict";
@@ -25,26 +25,9 @@
   Pathfinding.WEIGHT = WEIGHT;
   Pathfinding.WEIGHT_COST = WEIGHT_COST;
 
-  Pathfinding.meta = {
-    bfs: {
-      name: "BFS (Genislik Oncelikli Arama)",
-      note: "Baslangictan dalga gibi disa dogru yayilir. Tum kenarlarin maliyeti esitse buldugu ilk yol en kisa yoldur. Agir zeminleri gormezden gelir, cunku sadece adim sayisi sayar.",
-    },
-    dfs: {
-      name: "DFS (Derinlik Oncelikli Arama)",
-      note: "Bir yonu sonuna kadar takip eder, tikanirsa geri doner. Hizli bir yol bulabilir ama en kisa olmasi garanti degildir; egri bugru rotalar cikarir.",
-    },
-    dijkstra: {
-      name: "Dijkstra",
-      note: "Her zaman o ana kadarki en ucuz hucreden devam eder. Agir zeminleri dogru hesaplar; agirliklarin hepsi 1 ise BFS ile ayni sonucu verir.",
-    },
-    astar: {
-      name: "A* (A yildiz)",
-      note: "Dijkstra ile ayni garantiyi verir, ama hedefe olan tahmini uzakligi (Manhattan sezgisi) de hesaba katarak once dogru yone bakar. Bu yuzden cok daha az hucre gezer.",
-    },
-  };
+  // Names and explanations live in i18n.js so they can be translated.
 
-  /* ---------------- ortak yardimcilar ---------------- */
+  /* ---------------- shared helpers ---------------- */
 
   function neighbors(index, cols, rows) {
     const row = Math.floor(index / cols);
@@ -82,7 +65,7 @@
     return cost;
   }
 
-  /* ---------------- minimum yigin (priority queue) ---------------- */
+  /* ---------------- min-heap (priority queue) ---------------- */
 
   function MinHeap() {
     const items = [];
@@ -126,7 +109,7 @@
     };
   }
 
-  /* ---------------- algoritmalar ---------------- */
+  /* ---------------- algorithms ---------------- */
 
   function bfs(grid) {
     const { cells, cols, rows, start, end } = grid;
@@ -226,13 +209,13 @@
 
   Pathfinding.run = function (key, grid) {
     const impl = impls[key];
-    if (!impl) throw new Error("Bilinmeyen algoritma: " + key);
+    if (!impl) throw new Error("Unknown algorithm: " + key);
     return impl(grid);
   };
 
   /**
-   * Recursive backtracker ile labirent uretir.
-   * Izgarayi 2 adim atlayarak dolasir, boylece duvarlar arada kalir.
+   * Generates a maze with a recursive backtracker.
+   * It walks the grid two cells at a time, so walls survive in between.
    */
   Pathfinding.maze = function (cols, rows, start, end) {
     const cells = new Uint8Array(cols * rows).fill(WALL);
@@ -265,7 +248,7 @@
       stack.push([pick[0], pick[1]]);
     }
 
-    // Baslangic ve hedef asla duvar olmasin, cevrelerinden cikis kalsin.
+    // Start and target are never walls, and always keep one way out.
     for (const anchor of [start, end]) {
       cells[anchor] = 0;
       const row = Math.floor(anchor / cols);
@@ -280,7 +263,7 @@
       }
     }
 
-    // Bir miktar agir zemin serpistir, agirlikli algoritmalar fark etsin.
+    // Sprinkle some heavy ground so the weighted algorithms have something to do.
     for (let i = 0; i < cells.length; i++) {
       if (cells[i] === 0 && i !== start && i !== end && Math.random() < 0.06) {
         cells[i] = WEIGHT;

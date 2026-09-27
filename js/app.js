@@ -1,36 +1,72 @@
 /*
- * Arayuz katmani.
+ * UI layer.
  *
- * Algoritmalar (sorting.js / pathfinding.js) ne cizildigini bilmez;
- * burada sadece onlarin urettigi islem listesini zamana yayarak
- * oynatiyoruz. Tek bir requestAnimationFrame dongusu var, hiz ayari
- * "bir karede kac islem oynatilsin" sorusuna donusuyor.
+ * The algorithms (sorting.js / pathfinding.js) know nothing about drawing;
+ * here we simply replay the operation lists they produce, spread over time.
+ * There is a single requestAnimationFrame loop, and the speed slider turns
+ * into one question: how many operations should this frame play?
  */
 (function () {
   "use strict";
 
   const $ = (sel) => document.querySelector(sel);
+  const t = (key) => I18n.t(key);
+
+  let locale = "en-US";
+  const num = (value) => value.toLocaleString(locale);
 
   /* ============================================================
-   * Sekme gecisleri
+   * Language
+   * ============================================================ */
+  function applyLanguage(lang) {
+    const active = I18n.set(lang);
+    locale = active === "tr" ? "tr-TR" : "en-US";
+    document.documentElement.lang = active;
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+      el.setAttribute("aria-label", t(el.dataset.i18nAria));
+    });
+    document.querySelectorAll(".lang").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.lang === active);
+    });
+
+    try {
+      localStorage.setItem("algovizor-lang", active);
+    } catch (err) {
+      // Private browsing blocks storage; the page still works without it.
+    }
+
+    sortView.refreshText();
+    pathView.refreshText();
+  }
+
+  /* ============================================================
+   * Tabs
    * ============================================================ */
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach((t) => {
-        const active = t === tab;
-        t.classList.toggle("is-active", active);
-        t.setAttribute("aria-selected", String(active));
+      document.querySelectorAll(".tab").forEach((other) => {
+        const isActive = other === tab;
+        other.classList.toggle("is-active", isActive);
+        other.setAttribute("aria-selected", String(isActive));
       });
-      document.querySelectorAll(".view").forEach((v) => {
-        v.classList.toggle("is-active", v.id === "view-" + tab.dataset.view);
+      document.querySelectorAll(".view").forEach((view) => {
+        view.classList.toggle("is-active", view.id === "view-" + tab.dataset.view);
       });
       if (tab.dataset.view === "pathfinding") pathView.fit();
       else sortView.draw();
     });
   });
 
+  document.querySelectorAll(".lang").forEach((btn) => {
+    btn.addEventListener("click", () => applyLanguage(btn.dataset.lang));
+  });
+
   /* ============================================================
-   * SIRALAMA GORUNUMU
+   * SORTING VIEW
    * ============================================================ */
   const sortView = (function () {
     const canvas = $("#sort-canvas");
@@ -72,12 +108,13 @@
     }
 
     function explain() {
-      const meta = Sorting.meta[$("#sort-algo").value];
+      const key = $("#sort-algo").value;
+      const meta = Sorting.meta[key];
       $("#sort-explain").innerHTML =
-        "<b>" + meta.name + "</b> &middot; zaman " + meta.time +
-        " &middot; ek bellek " + meta.space +
-        " &middot; " + (meta.stable ? "kararli (stable)" : "kararsiz") +
-        "<br>" + meta.note;
+        "<b>" + meta.name + "</b> &middot; " + t("meta.time") + " " + meta.time +
+        " &middot; " + t("meta.space") + " " + meta.space +
+        " &middot; " + (meta.stable ? t("meta.stable") : t("meta.unstable")) +
+        "<br>" + t("sort." + key + ".note");
     }
 
     function draw() {
@@ -103,14 +140,13 @@
     }
 
     function updateStats() {
-      $("#stat-cmp").textContent = counters.cmp.toLocaleString("tr-TR");
-      $("#stat-swap").textContent = counters.swap.toLocaleString("tr-TR");
-      $("#stat-step").textContent =
-        opIndex.toLocaleString("tr-TR") + " / " + ops.length.toLocaleString("tr-TR");
-      $("#stat-time").textContent = (elapsed / 1000).toFixed(1) + " sn";
+      $("#stat-cmp").textContent = num(counters.cmp);
+      $("#stat-swap").textContent = num(counters.swap);
+      $("#stat-step").textContent = num(opIndex) + " / " + num(ops.length);
+      $("#stat-time").textContent = (elapsed / 1000).toFixed(1) + " " + t("unit.seconds");
     }
 
-    /** Hiz kaydirmaci -> her karede oynatilacak islem sayisi. */
+    /** Speed slider -> operations played per frame. */
     function opsPerFrame() {
       const speed = Number($("#sort-speed").value); // 1..12
       return Math.max(1, Math.round(Math.pow(1.55, speed - 1)));
@@ -206,7 +242,7 @@
       toggleButtons(false);
     }
 
-    /* --- olaylar --- */
+    /* --- events --- */
     $("#sort-size").addEventListener("input", (e) => {
       $("#sort-size-val").textContent = e.target.value;
       generate();
@@ -215,9 +251,7 @@
       $("#sort-speed-val").textContent = e.target.value;
     });
     $("#sort-dist").addEventListener("change", generate);
-    $("#sort-algo").addEventListener("change", () => {
-      reset();
-    });
+    $("#sort-algo").addEventListener("change", reset);
     $("#sort-shuffle").addEventListener("click", generate);
     $("#sort-run").addEventListener("click", run);
     $("#sort-stop").addEventListener("click", () => {
@@ -225,12 +259,20 @@
       updateStats();
     });
 
-    generate();
-    return { draw, generate, run, stop };
+    return {
+      draw,
+      generate,
+      run,
+      stop,
+      refreshText() {
+        explain();
+        updateStats();
+      },
+    };
   })();
 
   /* ============================================================
-   * YOL BULMA GORUNUMU
+   * PATHFINDING VIEW
    * ============================================================ */
   const pathView = (function () {
     const gridEl = $("#grid");
@@ -243,13 +285,14 @@
     let playing = false;
     let rafId = null;
     let startedAt = 0;
+    let lastResult = null;
 
-    /** Ekran genisligine gore izgara boyutunu secer (tek sayi: labirent icin sart). */
+    /** Picks a grid size for the available width (odd column count: the maze needs it). */
     function fit() {
       const width = gridEl.clientWidth || 900;
       const target = Math.min(55, Math.max(21, Math.round(width / 22)));
       const nextCols = target % 2 === 0 ? target + 1 : target;
-      const nextRows = Math.max(15, nextCols % 2 === 0 ? 21 : 21);
+      const nextRows = 21;
       if (nextCols === cols && nextRows === rows) return;
       build(nextCols, nextRows);
     }
@@ -288,18 +331,19 @@
     }
 
     function clearRun() {
+      lastResult = null;
       for (let i = 0; i < nodes.length; i++) {
         nodes[i].classList.remove("visited", "route", "frontier");
       }
       $("#stat-visited").textContent = "0";
       $("#stat-path").textContent = "—";
       $("#stat-cost").textContent = "—";
-      $("#stat-ptime").textContent = "0.0 sn";
+      $("#stat-ptime").textContent = "0.0 " + t("unit.seconds");
+      $("#path-explain").textContent = t("hint.grid");
     }
 
-    /* --- fare ile cizim --- */
+    /* --- drawing with the mouse --- */
     let drawing = false;
-    let dragTarget = null;
 
     function paint(index) {
       const tool = $("#path-tool").value;
@@ -326,11 +370,9 @@
       const i = indexFromEvent(e);
       if (i === null) return;
       drawing = true;
-      const tool = $("#path-tool").value;
-      dragTarget = i === start ? "start" : i === end ? "end" : tool;
-      if (dragTarget === "start" || dragTarget === "end") {
-        $("#path-tool").value = dragTarget;
-      }
+      // Grabbing the start or target square drags it, whatever tool is selected.
+      if (i === start) $("#path-tool").value = "start";
+      else if (i === end) $("#path-tool").value = "end";
       paint(i);
       gridEl.setPointerCapture(e.pointerId);
     });
@@ -343,26 +385,41 @@
 
     const stopDrawing = () => {
       drawing = false;
-      dragTarget = null;
     };
     gridEl.addEventListener("pointerup", stopDrawing);
     gridEl.addEventListener("pointercancel", stopDrawing);
     window.addEventListener("blur", stopDrawing);
 
-    /* --- animasyon --- */
+    /* --- animation --- */
     function cellsPerFrame() {
       const speed = Number($("#path-speed").value);
       return Math.max(1, Math.round(Math.pow(1.5, speed - 1)));
+    }
+
+    function describe(algo) {
+      $("#path-explain").innerHTML =
+        "<b>" + t("path." + algo + ".name") + "</b><br>" + t("path." + algo + ".note");
+    }
+
+    function reportResult(result) {
+      $("#stat-path").textContent = result.path.length
+        ? result.path.length + " " + t("path.cells")
+        : t("path.none");
+      $("#stat-cost").textContent = result.cost === null ? "—" : String(result.cost);
+      if (!result.path.length) {
+        $("#path-explain").innerHTML +=
+          "<br><b>" + t("path.none") + "</b> — " + t("path.noneNote");
+      }
     }
 
     function run() {
       if (playing) return;
       clearRun();
       const algo = $("#path-algo").value;
-      const meta = Pathfinding.meta[algo];
-      $("#path-explain").innerHTML = "<b>" + meta.name + "</b><br>" + meta.note;
+      describe(algo);
 
       const result = Pathfinding.run(algo, { cells, cols, rows, start, end });
+      lastResult = result;
       playing = true;
       toggleButtons(true);
       startedAt = performance.now();
@@ -380,30 +437,26 @@
             const idx = result.visited[vi++];
             if (idx !== start && idx !== end) nodes[idx].classList.add("visited");
           }
-          $("#stat-visited").textContent = vi.toLocaleString("tr-TR");
+          $("#stat-visited").textContent = num(vi);
           if (vi >= result.visited.length) phase = "path";
         } else {
-          for (let k = 0; k < Math.max(1, Math.round(budget / 2)) && pi < result.path.length; k++) {
+          const step = Math.max(1, Math.round(budget / 2));
+          for (let k = 0; k < step && pi < result.path.length; k++) {
             const idx = result.path[pi++];
             if (idx !== start && idx !== end) nodes[idx].classList.add("route");
           }
           if (pi >= result.path.length) {
-            $("#stat-path").textContent = result.path.length
-              ? result.path.length + " hucre"
-              : "yol yok";
-            $("#stat-cost").textContent = result.cost === null ? "—" : String(result.cost);
-            $("#stat-ptime").textContent = ((performance.now() - startedAt) / 1000).toFixed(1) + " sn";
+            reportResult(result);
+            $("#stat-ptime").textContent =
+              ((performance.now() - startedAt) / 1000).toFixed(1) + " " + t("unit.seconds");
             playing = false;
             toggleButtons(false);
-            if (!result.path.length) {
-              $("#path-explain").innerHTML +=
-                "<br><b>Hedefe ulasan bir yol yok</b> — duvarlar hedefi tamamen cevrelemis.";
-            }
             return;
           }
         }
 
-        $("#stat-ptime").textContent = ((performance.now() - startedAt) / 1000).toFixed(1) + " sn";
+        $("#stat-ptime").textContent =
+          ((performance.now() - startedAt) / 1000).toFixed(1) + " " + t("unit.seconds");
         rafId = requestAnimationFrame(frame);
       }
 
@@ -449,12 +502,26 @@
       resizeTimer = setTimeout(fit, 200);
     });
 
-    fit();
-    return { fit, run, stop };
+    return {
+      fit,
+      run,
+      stop,
+      refreshText() {
+        if (lastResult) {
+          describe($("#path-algo").value);
+          reportResult(lastResult);
+        } else {
+          $("#path-explain").textContent = t("hint.grid");
+          $("#stat-path").textContent = "—";
+        }
+        $("#stat-ptime").textContent =
+          $("#stat-ptime").textContent.replace(/[^\d.]+$/, " " + t("unit.seconds"));
+      },
+    };
   })();
 
   /* ============================================================
-   * Klavye kisayollari — kayit sirasinda fareye gerek kalmasin
+   * Keyboard shortcuts - no mouse needed while recording
    * ============================================================ */
   document.addEventListener("keydown", (e) => {
     if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT") return;
@@ -470,4 +537,18 @@
       pathView.stop();
     }
   });
+
+  /* ============================================================
+   * Boot
+   * ============================================================ */
+  let saved = null;
+  try {
+    saved = localStorage.getItem("algovizor-lang");
+  } catch (err) {
+    saved = null;
+  }
+
+  sortView.generate();
+  pathView.fit();
+  applyLanguage(saved || "en");
 })();

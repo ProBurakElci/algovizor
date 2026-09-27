@@ -1,4 +1,4 @@
-name: GitHub Pages yayini
+name: Deploy to GitHub Pages
 
 on:
   push:

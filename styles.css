@@ -50,6 +50,8 @@ body {
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
 }
 
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
 .tabs { display: flex; gap: 6px; background: var(--bg-soft); padding: 4px; border-radius: 10px; }
 .tab {
   border: 0; background: transparent; color: var(--muted);
@@ -57,6 +59,14 @@ body {
   font-size: 14px; font-weight: 600;
 }
 .tab.is-active { background: var(--panel); color: var(--text); box-shadow: 0 1px 0 var(--line); }
+
+.langs { display: flex; gap: 4px; background: var(--bg-soft); padding: 4px; border-radius: 10px; }
+.lang {
+  border: 0; background: transparent; color: var(--muted);
+  padding: 8px 11px; border-radius: 8px; cursor: pointer;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+}
+.lang.is-active { background: var(--panel); color: var(--accent); }
 
 /* ---------- düzen ---------- */
 main { padding: 24px 28px 8px; }
@@ -133,6 +143,7 @@ canvas { width: 100%; height: auto; display: block; border-radius: 8px; backgrou
 .stats b { font-size: 17px; font-variant-numeric: tabular-nums; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; color: var(--muted); font-size: 12px; margin: 14px 0 0; }
+.legend > span { display: inline-flex; align-items: center; }
 .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
 .dot-idle { background: var(--idle); }
 .dot-cmp { background: var(--cmp); }

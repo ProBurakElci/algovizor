@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AlgoVizor — Algoritma Görselleştirici</title>
-<meta name="description" content="Sıralama ve yol bulma algoritmalarını adım adım görselleştiren, kurulum gerektirmeyen açık kaynak araç." />
+<title>AlgoVizor — Algorithm Visualizer</title>
+<meta name="description" content="Step-by-step visualizer for sorting and pathfinding algorithms. No install, no dependencies, no build step." />
 <link rel="stylesheet" href="styles.css" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><rect x='18' y='55' width='14' height='30' fill='%2338bdf8'/><rect x='38' y='35' width='14' height='50' fill='%23a78bfa'/><rect x='58' y='20' width='14' height='65' fill='%2334d399'/></svg>" />
 </head>
@@ -13,130 +13,141 @@
     <div class="brand">
       <span class="logo" aria-hidden="true"></span>
       <h1>AlgoVizor</h1>
-      <span class="tag">algoritmaları izle, ezberlemeden anla</span>
+      <span class="tag" data-i18n="app.tagline"></span>
     </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab is-active" data-view="sorting" role="tab" aria-selected="true">Sıralama</button>
-      <button class="tab" data-view="pathfinding" role="tab" aria-selected="false">Yol Bulma</button>
-    </nav>
+    <div class="topbar-right">
+      <nav class="tabs" role="tablist">
+        <button class="tab is-active" data-view="sorting" role="tab" aria-selected="true" data-i18n="tab.sorting"></button>
+        <button class="tab" data-view="pathfinding" role="tab" aria-selected="false" data-i18n="tab.pathfinding"></button>
+      </nav>
+      <div class="langs" role="group" aria-label="Language">
+        <button class="lang is-active" data-lang="en">EN</button>
+        <button class="lang" data-lang="tr">TR</button>
+      </div>
+    </div>
   </header>
 
   <main>
-    <!-- ============ SIRALAMA ============ -->
+    <!-- ============ SORTING ============ -->
     <section id="view-sorting" class="view is-active">
       <div class="panel">
         <div class="field">
-          <label for="sort-algo">Algoritma</label>
+          <label for="sort-algo" data-i18n="label.algorithm"></label>
           <select id="sort-algo">
-            <option value="bubble">Bubble Sort — O(n²)</option>
-            <option value="insertion">Insertion Sort — O(n²)</option>
-            <option value="selection">Selection Sort — O(n²)</option>
-            <option value="merge">Merge Sort — O(n log n)</option>
-            <option value="quick">Quick Sort — O(n log n)</option>
-            <option value="heap">Heap Sort — O(n log n)</option>
+            <option value="bubble" data-i18n="sort.bubble.option"></option>
+            <option value="insertion" data-i18n="sort.insertion.option"></option>
+            <option value="selection" data-i18n="sort.selection.option"></option>
+            <option value="merge" data-i18n="sort.merge.option"></option>
+            <option value="quick" data-i18n="sort.quick.option"></option>
+            <option value="heap" data-i18n="sort.heap.option"></option>
           </select>
         </div>
         <div class="field">
-          <label for="sort-size">Dizi boyutu: <b id="sort-size-val">48</b></label>
+          <label for="sort-size"><span data-i18n="label.size"></span>: <b id="sort-size-val">48</b></label>
           <input id="sort-size" type="range" min="8" max="140" value="48" />
         </div>
         <div class="field">
-          <label for="sort-speed">Hız: <b id="sort-speed-val">6</b></label>
+          <label for="sort-speed"><span data-i18n="label.speed"></span>: <b id="sort-speed-val">6</b></label>
           <input id="sort-speed" type="range" min="1" max="12" value="6" />
         </div>
         <div class="field">
-          <label for="sort-dist">Dağılım</label>
+          <label for="sort-dist" data-i18n="label.distribution"></label>
           <select id="sort-dist">
-            <option value="random">Rastgele</option>
-            <option value="nearly">Neredeyse sıralı</option>
-            <option value="reversed">Ters sıralı</option>
-            <option value="fewunique">Az farklı değer</option>
+            <option value="random" data-i18n="dist.random"></option>
+            <option value="nearly" data-i18n="dist.nearly"></option>
+            <option value="reversed" data-i18n="dist.reversed"></option>
+            <option value="fewunique" data-i18n="dist.fewunique"></option>
           </select>
         </div>
         <div class="actions">
-          <button id="sort-shuffle" class="btn">Karıştır</button>
-          <button id="sort-run" class="btn btn-primary">Başlat</button>
-          <button id="sort-stop" class="btn" disabled>Durdur</button>
+          <button id="sort-shuffle" class="btn" data-i18n="btn.shuffle"></button>
+          <button id="sort-run" class="btn btn-primary" data-i18n="btn.start"></button>
+          <button id="sort-stop" class="btn" disabled data-i18n="btn.stop"></button>
         </div>
       </div>
 
       <div class="stage">
-        <canvas id="sort-canvas" width="1280" height="520" aria-label="Sıralama görselleştirmesi"></canvas>
+        <canvas id="sort-canvas" width="1280" height="520" data-i18n-aria="a11y.sortCanvas"></canvas>
         <div class="stats" id="sort-stats">
-          <div><span>Karşılaştırma</span><b id="stat-cmp">0</b></div>
-          <div><span>Takas / yazma</span><b id="stat-swap">0</b></div>
-          <div><span>Adım</span><b id="stat-step">0 / 0</b></div>
-          <div><span>Süre</span><b id="stat-time">0.0 sn</b></div>
+          <div><span data-i18n="stat.comparisons"></span><b id="stat-cmp">0</b></div>
+          <div><span data-i18n="stat.writes"></span><b id="stat-swap">0</b></div>
+          <div><span data-i18n="stat.step"></span><b id="stat-step">0 / 0</b></div>
+          <div><span data-i18n="stat.time"></span><b id="stat-time">0.0 s</b></div>
         </div>
         <p class="legend">
-          <span class="dot dot-idle"></span> bekleyen
-          <span class="dot dot-cmp"></span> karşılaştırılan
-          <span class="dot dot-swap"></span> değişen
-          <span class="dot dot-done"></span> yerine oturan
+          <span><span class="dot dot-idle"></span><span data-i18n="legend.idle"></span></span>
+          <span><span class="dot dot-cmp"></span><span data-i18n="legend.comparing"></span></span>
+          <span><span class="dot dot-swap"></span><span data-i18n="legend.swapping"></span></span>
+          <span><span class="dot dot-done"></span><span data-i18n="legend.sorted"></span></span>
         </p>
         <p class="explain" id="sort-explain"></p>
       </div>
     </section>
 
-    <!-- ============ YOL BULMA ============ -->
+    <!-- ============ PATHFINDING ============ -->
     <section id="view-pathfinding" class="view">
       <div class="panel">
         <div class="field">
-          <label for="path-algo">Algoritma</label>
+          <label for="path-algo" data-i18n="label.algorithm"></label>
           <select id="path-algo">
-            <option value="bfs">BFS — en kısa yolu garanti eder</option>
-            <option value="dijkstra">Dijkstra — ağırlıklı en kısa yol</option>
-            <option value="astar">A* — sezgisel, hızlı</option>
-            <option value="dfs">DFS — derine dalar, kısa yolu garanti etmez</option>
+            <option value="bfs" data-i18n="path.bfs.option"></option>
+            <option value="dijkstra" data-i18n="path.dijkstra.option"></option>
+            <option value="astar" data-i18n="path.astar.option"></option>
+            <option value="dfs" data-i18n="path.dfs.option"></option>
           </select>
         </div>
         <div class="field">
-          <label for="path-speed">Hız: <b id="path-speed-val">7</b></label>
+          <label for="path-speed"><span data-i18n="label.speed"></span>: <b id="path-speed-val">7</b></label>
           <input id="path-speed" type="range" min="1" max="12" value="7" />
         </div>
         <div class="field">
-          <label for="path-tool">Fare aracı</label>
+          <label for="path-tool" data-i18n="label.tool"></label>
           <select id="path-tool">
-            <option value="wall">Duvar çiz</option>
-            <option value="weight">Ağır zemin (bataklık)</option>
-            <option value="start">Başlangıcı taşı</option>
-            <option value="end">Hedefi taşı</option>
-            <option value="erase">Sil</option>
+            <option value="wall" data-i18n="tool.wall"></option>
+            <option value="weight" data-i18n="tool.weight"></option>
+            <option value="start" data-i18n="tool.start"></option>
+            <option value="end" data-i18n="tool.end"></option>
+            <option value="erase" data-i18n="tool.erase"></option>
           </select>
         </div>
         <div class="actions">
-          <button id="path-maze" class="btn">Labirent üret</button>
-          <button id="path-clear" class="btn">Temizle</button>
-          <button id="path-run" class="btn btn-primary">Başlat</button>
-          <button id="path-stop" class="btn" disabled>Durdur</button>
+          <button id="path-maze" class="btn" data-i18n="btn.maze"></button>
+          <button id="path-clear" class="btn" data-i18n="btn.clear"></button>
+          <button id="path-run" class="btn btn-primary" data-i18n="btn.start"></button>
+          <button id="path-stop" class="btn" disabled data-i18n="btn.stop"></button>
         </div>
       </div>
 
       <div class="stage">
-        <div id="grid" class="grid" aria-label="Yol bulma ızgarası"></div>
+        <div id="grid" class="grid" data-i18n-aria="a11y.grid"></div>
         <div class="stats">
-          <div><span>Gezilen hücre</span><b id="stat-visited">0</b></div>
-          <div><span>Yol uzunluğu</span><b id="stat-path">—</b></div>
-          <div><span>Toplam maliyet</span><b id="stat-cost">—</b></div>
-          <div><span>Süre</span><b id="stat-ptime">0.0 sn</b></div>
+          <div><span data-i18n="stat.visited"></span><b id="stat-visited">0</b></div>
+          <div><span data-i18n="stat.pathLength"></span><b id="stat-path">—</b></div>
+          <div><span data-i18n="stat.cost"></span><b id="stat-cost">—</b></div>
+          <div><span data-i18n="stat.time"></span><b id="stat-ptime">0.0 s</b></div>
         </div>
         <p class="legend">
-          <span class="dot dot-start"></span> başlangıç
-          <span class="dot dot-end"></span> hedef
-          <span class="dot dot-wall"></span> duvar
-          <span class="dot dot-weight"></span> ağır zemin (maliyet 5)
-          <span class="dot dot-visit"></span> gezilen
-          <span class="dot dot-route"></span> bulunan yol
+          <span><span class="dot dot-start"></span><span data-i18n="legend.start"></span></span>
+          <span><span class="dot dot-end"></span><span data-i18n="legend.end"></span></span>
+          <span><span class="dot dot-wall"></span><span data-i18n="legend.wall"></span></span>
+          <span><span class="dot dot-weight"></span><span data-i18n="legend.weight"></span></span>
+          <span><span class="dot dot-visit"></span><span data-i18n="legend.visited"></span></span>
+          <span><span class="dot dot-route"></span><span data-i18n="legend.route"></span></span>
         </p>
-        <p class="explain" id="path-explain">Izgaraya tıklayıp sürükleyerek duvar çizebilir, başlangıç ve hedefi taşıyabilirsin.</p>
+        <p class="explain" id="path-explain"></p>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>Kurulum yok, bağımlılık yok — düz HTML, CSS ve JavaScript. <a href="https://github.com/ProBurakElci/algovizor" target="_blank" rel="noopener">Kaynak kodu</a> MIT lisanslı.</p>
+    <p>
+      <span data-i18n="footer.text"></span>
+      <a href="https://github.com/ProBurakElci/algovizor" target="_blank" rel="noopener" data-i18n="footer.link"></a>
+      <span data-i18n="footer.license"></span>
+    </p>
   </footer>
 
+  <script src="js/i18n.js"></script>
   <script src="js/sorting.js"></script>
   <script src="js/pathfinding.js"></script>
   <script src="js/app.js"></script>

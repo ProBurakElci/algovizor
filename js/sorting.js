@@ -1,69 +1,34 @@
 /*
- * Siralama algoritmalari.
+ * Sorting algorithms.
  *
- * Buradaki fonksiyonlar animasyon yapmaz. Dizinin bir kopyasi uzerinde
- * calisip yaptiklari her hareketi bir "islem listesi" olarak dondururler:
+ * Nothing in here animates. Each function works on a copy of the array and
+ * returns every move it made as a list of operations:
  *
- *   { t: "cmp",  i, j }  -> i ve j karsilastirildi
- *   { t: "swap", i, j }  -> i ve j yer degistirdi
- *   { t: "set",  i, v }  -> i konumuna v yazildi (merge sort icin)
- *   { t: "done", i }     -> i artik kesin yerinde
+ *   { t: "cmp",  i, j }  -> compared i and j
+ *   { t: "swap", i, j }  -> swapped i and j
+ *   { t: "set",  i, v }  -> wrote v at i (merge sort needs this)
+ *   { t: "done", i }     -> i is now in its final place
  *
- * Boylece cizim kodu algoritmadan tamamen ayri kaliyor: arayuz sadece
- * listeyi sirayla oynatiyor. Duraklatmak, hizlandirmak veya geri almak
- * bu sayede tek satirlik is.
+ * That keeps the drawing code completely out of the algorithm: the UI just
+ * replays the list. Pausing, changing speed or stepping backwards all become
+ * one-line problems.
  */
 (function (global) {
   "use strict";
 
   const Sorting = {};
 
+  // The prose explanations live in i18n.js; only the facts live here.
   Sorting.meta = {
-    bubble: {
-      name: "Bubble Sort",
-      time: "O(n^2)",
-      space: "O(1)",
-      stable: true,
-      note: "Komsu iki elemani karsilastirir, ters duruyorsa takas eder. Her turda en buyuk eleman sona kabarir. Neredeyse sirali dizilerde sasirtici bicimde hizlidir, cunku takas olmayan turda erken cikar.",
-    },
-    insertion: {
-      name: "Insertion Sort",
-      time: "O(n^2)",
-      space: "O(1)",
-      stable: true,
-      note: "Elindeki oyun kagitlarini siralamak gibi: her yeni elemani soldaki sirali bolgede dogru yere sokar. Kucuk ve neredeyse sirali dizilerde gercek hayatta en hizli secenektir; bu yuzden bircok kutuphane buyuk algoritmalarin son adiminda buna gecer.",
-    },
-    selection: {
-      name: "Selection Sort",
-      time: "O(n^2)",
-      space: "O(1)",
-      stable: false,
-      note: "Kalan kisimdaki en kucugu bulur ve one alir. Takas sayisi en fazla n-1 oldugu icin yazma islemi pahali olan ortamlarda (ornegin flash bellek) avantajlidir.",
-    },
-    merge: {
-      name: "Merge Sort",
-      time: "O(n log n)",
-      space: "O(n)",
-      stable: true,
-      note: "Diziyi ikiye bol, her yariyi sirala, sonra iki sirali yariyi birlestir. Garantili O(n log n) verir, en kotu durumda da bozulmaz. Bedeli ek bellektir.",
-    },
-    quick: {
-      name: "Quick Sort",
-      time: "O(n log n) ortalama",
-      space: "O(log n)",
-      stable: false,
-      note: "Bir pivot secer, kucukleri soluna buyukleri saginda toplar, sonra iki tarafi ayni sekilde cozer. Pratikte en hizli siralamadir ama kotu pivot secimiyle O(n^2) seviyesine duser. Burada pivotu medyan-of-three ile seciyoruz.",
-    },
-    heap: {
-      name: "Heap Sort",
-      time: "O(n log n)",
-      space: "O(1)",
-      stable: false,
-      note: "Diziyi bir max-heap yapisina cevirir, sonra kokteki en buyugu tekrar tekrar sona atar. Ek bellek istemez ve en kotu durumda da O(n log n) kalir.",
-    },
+    bubble: { name: "Bubble Sort", time: "O(n²)", space: "O(1)", stable: true },
+    insertion: { name: "Insertion Sort", time: "O(n²)", space: "O(1)", stable: true },
+    selection: { name: "Selection Sort", time: "O(n²)", space: "O(1)", stable: false },
+    merge: { name: "Merge Sort", time: "O(n log n)", space: "O(n)", stable: true },
+    quick: { name: "Quick Sort", time: "O(n log n) average", space: "O(log n)", stable: false },
+    heap: { name: "Heap Sort", time: "O(n log n)", space: "O(1)", stable: false },
   };
 
-  /* ---------------- yardimcilar ---------------- */
+  /* ---------------- helpers ---------------- */
 
   function recorder() {
     const ops = [];
@@ -88,7 +53,7 @@
     };
   }
 
-  /* ---------------- algoritmalar ---------------- */
+  /* ---------------- algorithms ---------------- */
 
   function bubble(a, r) {
     const n = a.length;
@@ -243,19 +208,19 @@
   const impls = { bubble, insertion, selection, merge, quick, heap };
 
   /**
-   * Verilen diziyi siralar ve yapilan hareketlerin listesini dondurur.
-   * Orijinal dizi degistirilmez.
+   * Sorts the array and returns the list of moves it made.
+   * The input array is left untouched.
    */
   Sorting.run = function (key, input) {
     const impl = impls[key];
-    if (!impl) throw new Error("Bilinmeyen algoritma: " + key);
+    if (!impl) throw new Error("Unknown algorithm: " + key);
     const a = input.slice();
     const r = recorder();
     impl(a, r);
     return { ops: r.ops, sorted: a };
   };
 
-  /** Farkli dagilimlarda test verisi uretir. */
+  /** Builds test data in different shapes. */
   Sorting.generate = function (size, dist) {
     const a = new Array(size);
     for (let i = 0; i < size; i++) a[i] = i + 1;

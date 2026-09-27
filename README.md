@@ -1,34 +1,37 @@
 # AlgoVizor
 
-[![testler](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml/badge.svg)](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml)
-[![lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
+[![tests](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml/badge.svg)](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Canlı demo → https://proburakelci.github.io/algovizor/**
+**Live demo → https://proburakelci.github.io/algovizor/**
 
-Sıralama ve yol bulma algoritmalarını adım adım izleten, **kurulum gerektirmeyen** bir görselleştirici.
-Tek bir `index.html`, üç JavaScript dosyası, sıfır bağımlılık. Derleme yok, `npm install` yok.
+A step-by-step visualizer for sorting and pathfinding algorithms that **needs no install**.
+One `index.html`, four JavaScript files, zero dependencies. No build step, no `npm install`.
 
-> Amaç: algoritmayı ezberlemek yerine çalışırken görmek. "Quick Sort neden hızlı?", "A* neden Dijkstra'dan az hücre geziyor?" gibi soruların cevabı ekranda.
+> The point is to watch an algorithm run instead of memorizing it. "Why is Quick Sort fast?",
+> "Why does A* visit fewer cells than Dijkstra?" — the answer is on screen.
 
-## Neler var
+Available in English and Turkish (EN / TR switch in the header).
 
-**Sıralama**
-- Bubble, Insertion, Selection, Merge, Quick (medyan-of-three pivot), Heap
-- Dizi boyutu 8–140, 4 farklı dağılım (rastgele / neredeyse sıralı / ters / az farklı değer)
-- Canlı sayaçlar: karşılaştırma, takas-yazma, adım, süre
-- Her algoritmanın zaman–bellek karmaşıklığı ve kararlı (stable) olup olmadığı ekranda
+## What's inside
 
-**Yol bulma**
-- BFS, DFS, Dijkstra, A* (Manhattan sezgisi)
-- Fareyle duvar çizme, ağır zemin (maliyet 5) koyma, başlangıç/hedefi sürükleme
-- Recursive backtracker ile labirent üretimi
-- Gezilen hücre sayısı, yol uzunluğu ve toplam maliyet karşılaştırması
+**Sorting**
+- Bubble, Insertion, Selection, Merge, Quick (median-of-three pivot), Heap
+- Array size 8–140, four distributions (random / nearly sorted / reversed / few unique values)
+- Live counters: comparisons, swaps and writes, step, elapsed time
+- Time and space complexity plus stability shown for every algorithm
 
-**Klavye**: `Space` başlat · `R` diziyi yeniden karıştır · `Esc` durdur
+**Pathfinding**
+- BFS, DFS, Dijkstra, A* (Manhattan heuristic)
+- Draw walls with the mouse, add heavy ground (cost 5), drag the start and target
+- Maze generation with a recursive backtracker
+- Compare cells visited, path length and total cost between algorithms
 
-## Çalıştırma
+**Keyboard**: `Space` run · `R` reshuffle the array · `Esc` stop
 
-Depoyu indir, `index.html` dosyasını tarayıcıda aç. Hepsi bu.
+## Running it
+
+Download the repo and open `index.html` in a browser. That's it.
 
 ```bash
 git clone https://github.com/ProBurakElci/algovizor.git
@@ -36,74 +39,78 @@ cd algovizor
 start index.html    # Windows  (macOS: open index.html, Linux: xdg-open index.html)
 ```
 
-Yerel sunucu tercih edersen (Node kuruluysa):
+If you prefer a local server (Node installed):
 
 ```bash
 npx --yes http-server . -p 5173
 ```
 
-## Kod nasıl düzenlenmiş
+## How the code is laid out
 
 ```
-index.html          arayüz iskeleti
-styles.css          tema ve yerleşim
-js/sorting.js       sıralama algoritmaları  (DOM bilmez)
-js/pathfinding.js   yol bulma algoritmaları (DOM bilmez)
-js/app.js           çizim, animasyon döngüsü, olaylar
+index.html          markup
+styles.css          theme and layout
+js/i18n.js          every user-visible string, per language
+js/sorting.js       sorting algorithms      (DOM-free)
+js/pathfinding.js   pathfinding algorithms  (DOM-free)
+js/app.js           drawing, animation loop, events
 ```
 
-Tasarımdaki tek önemli karar şu: **algoritmalar hiçbir şey çizmez.**
+There is one decision that shapes everything else: **the algorithms never draw anything.**
 
-Sıralama fonksiyonları dizinin bir kopyası üzerinde çalışıp yaptıkları her hareketi bir işlem listesi olarak döndürür:
+A sorting function works on a copy of the array and returns every move it made as a list of operations:
 
 ```js
-{ t: "cmp",  i, j }   // i ve j karşılaştırıldı
-{ t: "swap", i, j }   // yer değiştirdiler
-{ t: "set",  i, v }   // i konumuna v yazıldı
-{ t: "done", i }      // i artık kesin yerinde
+{ t: "cmp",  i, j }   // compared i and j
+{ t: "swap", i, j }   // swapped them
+{ t: "set",  i, v }   // wrote v at index i
+{ t: "done", i }      // i is now in its final place
 ```
 
-Yol bulma fonksiyonları da benzer şekilde `{ visited, path, cost }` döndürür.
+Pathfinding functions return `{ visited, path, cost }` in the same spirit.
 
-Arayüz bu listeyi `requestAnimationFrame` içinde zamana yayarak oynatır. Bunun üç faydası var:
+The UI replays that list inside a single `requestAnimationFrame` loop. Three things follow:
 
-1. Algoritma kodu `await` ve `setTimeout` ile kirlenmez — kitaptaki haliyle okunur.
-2. Hız ayarı "bir karede kaç işlem oynatılsın" sorusuna indirgenir.
-3. Algoritmalar tarayıcısız test edilebilir — aşağıdaki test buna örnek.
+1. The algorithm code never gets polluted with `await` and `setTimeout` — it reads like the textbook version.
+2. The speed slider collapses into one question: how many operations should this frame play?
+3. The algorithms can be tested without a browser — see below.
 
-## Test
+## Tests
 
 ```bash
 node test/run-tests.js
 ```
 
-Her algoritmayı farklı boyut ve dağılımlarda çalıştırıp sonucun gerçekten sıralı olduğunu,
-bulunan yolun duvarlardan geçmediğini ve BFS/Dijkstra/A*'ın ağırlıksız ızgarada aynı uzunlukta
-yol bulduğunu doğrular.
+Runs every algorithm across sizes and distributions and checks that the result is genuinely sorted,
+that replaying the operation list reproduces it, that a returned path never crosses a wall, that BFS,
+Dijkstra and A* agree on path length in an unweighted grid, and that every generated maze is solvable.
 
-## Katkı
+## Contributing
 
-Yeni algoritma eklemek kolay: `js/sorting.js` içine kaydedici (`r.cmp`, `r.swap`, `r.set`, `r.done`)
-kullanan bir fonksiyon yaz, `impls` nesnesine ekle, `meta` içine açıklamasını gir, `index.html`
-içindeki `<select>` listesine bir satır at. Arayüz tarafında hiçbir şey değiştirmen gerekmez.
+Adding an algorithm is small work: write a function in `js/sorting.js` that uses the recorder
+(`r.cmp`, `r.swap`, `r.set`, `r.done`), register it in `impls`, add its facts to `meta`, put its
+description and option label in `js/i18n.js`, then add one `<option>` to `index.html`.
+Nothing in the UI layer needs to change.
 
-Issue ve pull request açabilirsin — özellikle Shell Sort, Radix Sort, Bidirectional BFS ve
-Greedy Best-First eklemeleri beklemede.
+Issues and pull requests welcome — Shell Sort, Radix Sort, Bidirectional BFS and Greedy Best-First
+are on the wishlist.
 
-## Lisans
+## License
 
-MIT — bkz. [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-## English
+## Türkçe
 
-AlgoVizor is a dependency-free sorting and pathfinding visualizer: open `index.html`, no build step.
+AlgoVizor, sıralama ve yol bulma algoritmalarını adım adım gösteren, kurulum gerektirmeyen bir
+görselleştirici: `index.html` dosyasını aç, çalışsın. Arayüz başlıktaki EN / TR düğmesiyle Türkçeye geçer.
 
-Algorithms never touch the DOM. Sorting functions return an operation log (`cmp` / `swap` / `set` / `done`)
-and pathfinding functions return `{ visited, path, cost }`; the UI replays that log inside a single
-`requestAnimationFrame` loop. That keeps the algorithms readable, makes the speed slider trivial
-(operations per frame) and lets everything be tested headlessly with `node test/run-tests.js`.
+Tasarımdaki tek önemli karar şu: algoritmalar hiçbir şey çizmez. Sıralama fonksiyonları yaptıkları her
+hareketi bir işlem listesi (`cmp` / `swap` / `set` / `done`) olarak, yol bulma fonksiyonları ise
+`{ visited, path, cost }` olarak döndürür; arayüz bu listeyi tek bir `requestAnimationFrame`
+döngüsünde oynatır. Böylece algoritma kodu ders kitabındaki haliyle aynı kalır, hız ayarı "bir karede
+kaç işlem" sorusuna iner ve her şey tarayıcısız test edilebilir (`node test/run-tests.js`).
 
-Includes Bubble, Insertion, Selection, Merge, Quick and Heap sort, plus BFS, DFS, Dijkstra and A*
-with wall drawing, weighted tiles and recursive-backtracker maze generation. MIT licensed.
+Altı sıralama (bubble, insertion, selection, merge, quick, heap) ve dört yol bulma algoritması
+(BFS, DFS, Dijkstra, A*) ile duvar çizme, ağır zemin ve labirent üretimi içerir. MIT lisanslıdır.

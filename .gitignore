@@ -1,16 +1,16 @@
-# bagimlilik ve derleme ciktilari
+# dependencies and build output
 node_modules/
 dist/
 build/
 
-# editor ve isletim sistemi
+# editors and operating system
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# yerel ve gizli dosyalar  (bunlar asla depoya girmemeli)
+# local and secret files (these must never be committed)
 .env
 .env.*
 *.local
@@ -18,7 +18,7 @@ desktop.ini
 *.pem
 secrets.json
 
-# kayit / video calisma dosyalari
+# screen-recording work files
 *.mkv
 *.mp4
 kayitlar/
