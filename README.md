@@ -1,5 +1,10 @@
 # AlgoVizor
 
+[![testler](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml/badge.svg)](https://github.com/ProBurakElci/algovizor/actions/workflows/ci.yml)
+[![lisans: MIT](https://img.shields.io/badge/lisans-MIT-blue.svg)](LICENSE)
+
+**Canlı demo → https://proburakelci.github.io/algovizor/**
+
 Sıralama ve yol bulma algoritmalarını adım adım izleten, **kurulum gerektirmeyen** bir görselleştirici.
 Tek bir `index.html`, üç JavaScript dosyası, sıfır bağımlılık. Derleme yok, `npm install` yok.
 
